@@ -4,13 +4,13 @@ Inject shellcode from memory to process using Native Windows API for bypassing E
 ## Usage
 Enter a valid shellcode
 
-`C
+```C
 // Put your shellcode here
 char shellcode[] = "/xfc/xff.......";
-`
+```
 
 compile using gcc/g++ or visual studio and run
 
-`shell
+```shell
 injector.exe <PID>
-`
+```

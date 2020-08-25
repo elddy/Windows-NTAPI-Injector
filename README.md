@@ -1,2 +1,16 @@
 # Native-WinAPI-ShellcodeLoader
-Load shellcode in memory using Native Windows API for bypassing EDRs and Antiviruses
+Inject shellcode from memory to process using Native Windows API for bypassing EDRs and Antiviruses
+
+## Usage
+Enter a valid shellcode
+
+`C
+// Put your shellcode here
+char shellcode[] = "/xfc/xff.......";
+`
+
+compile using gcc/g++ or visual studio and run
+
+`shell
+injector.exe <PID>
+`

@@ -25,51 +25,5 @@ myRtlCreateUserThread fRtlCreateUserThread = NULL;
     (p)->SecurityQualityOfService = NULL;               \
 }
 
-HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId)
-{
-	CLIENT_ID cid = { (HANDLE)dwProcessId, NULL };
-
-	OBJECT_ATTRIBUTES oa;
-	InitializeObjectAttributes(&oa, 0, 0, 0, 0);
-
-	HANDLE hProcess = NULL;
-	NTSTATUS ntStatus = NtOpenProcess(&hProcess, dwDesiredAccess, &oa, &cid);
-
-	SetLastError(ntStatus);
-	return hProcess;
-}
-
-BOOL InitializeNTAPIs()
-{
-	HMODULE hNtdll = LoadLibraryW(L"ntdll");
-	if (!hNtdll)
-		return FALSE;
-
-	NtOpenProcess = (TNtOpenProcess)GetProcAddress(hNtdll, "NtOpenProcess");
-	if (!NtOpenProcess)
-	{
-		printf("[-] Could not get ntOpenProcess\n");
-		return FALSE;
-	}
-
-	fNtCreateSection = (myNtCreateSection)(GetProcAddress(hNtdll, "NtCreateSection"));
-	if (!fNtCreateSection)
-	{
-		printf("[-] Could not get fNtCreateSection\n");
-		return FALSE;
-	}
-	fNtMapViewOfSection = (myNtMapViewOfSection)(GetProcAddress(hNtdll, "NtMapViewOfSection"));
-	if (!fNtMapViewOfSection)
-	{
-		printf("[-] Could not get fNtMapViewOfSection\n");
-		return FALSE;
-	}
-
-	fRtlCreateUserThread = (myRtlCreateUserThread)(GetProcAddress(hNtdll, "RtlCreateUserThread"));
-	if (!fRtlCreateUserThread)
-	{
-		printf("[-] Could not get fRtlCreateUserThread\n");
-		return FALSE;
-	}
-	return TRUE;
-}
+HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId);
+BOOL InitializeNTAPIs();

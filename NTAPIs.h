@@ -27,3 +27,4 @@ myRtlCreateUserThread fRtlCreateUserThread = NULL;
 
 HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId);
 BOOL InitializeNTAPIs();
+HANDLE injectShellcode(DWORD pid, char * shellcode);

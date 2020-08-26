@@ -1,4 +1,4 @@
-#include "NTAPIs.h"
+#include "NTAPIs.hpp"
 
 HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId)
 {

@@ -1,5 +1,5 @@
 # Native-WinAPI-ShellcodeLoader
-Inject shellcode from memory to process using Native Windows API for bypassing EDRs and Antiviruses
+Inject shellcode from memory to process using Windows NTAPI for bypassing EDRs and Antiviruses
 
 ## Usage
 Enter a valid shellcode:

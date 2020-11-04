@@ -1,4 +1,4 @@
-# Native-WinAPI-ShellcodeLoader
+# Windows NTAPI shellcode injector
 Inject shellcode from memory to process using Windows NTAPI for bypassing EDRs and Antiviruses
 
 ## Usage

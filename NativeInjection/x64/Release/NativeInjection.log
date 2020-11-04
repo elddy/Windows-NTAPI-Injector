@@ -1,0 +1,6 @@
+﻿  NativeInjection.cpp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 7 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  NativeInjection.vcxproj -> C:\Users\ProOrNo\source\repos\NativeInjection\x64\Release\NativeInjection.exe

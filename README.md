@@ -16,6 +16,9 @@ Options:
         -u       URL to donwload shellcode from (Not listen mode).
         -p       PID/Process name to be injected (Optional).
         -l       Listen mode port (Not download mode).
+        -k       XOR key to use for decryption.
+        -s       Stealth mode - the decryption and injection will start after given seconds (Default 18).
+        -m       Injection mode - NT or normal(VirtualAllocEx, WriteProcessMemory, CreateRemoteThread).
 ```
 
 ## Examples

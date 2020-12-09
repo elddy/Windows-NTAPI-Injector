@@ -149,9 +149,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="arg_parse.cpp" />
+    <ClCompile Include="Download_shellcode.cpp" />
+    <ClCompile Include="listener.cpp" />
     <ClCompile Include="NativeInjection.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="arg_parser.h" />
+    <ClInclude Include="Download_shellcode.h" />
+    <ClInclude Include="listener.h" />
     <ClInclude Include="NTAPIs.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

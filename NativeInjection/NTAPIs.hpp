@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <time.h>
 #include <iostream>
 #include <tlhelp32.h>
 #pragma comment(lib, "ntdll")
@@ -28,7 +29,7 @@ myRtlCreateUserThread fRtlCreateUserThread = NULL;
 
 HANDLE MyNtOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId);
 BOOL InitializeNTAPIs();
-HANDLE injectShellcode(const char* shellcode, DWORD pid);
+HANDLE injectShellcode(char* shellcode, DWORD pid);
 
 // Put your shellcode here
 //unsigned char shellcode[] = "/xfc/xff";

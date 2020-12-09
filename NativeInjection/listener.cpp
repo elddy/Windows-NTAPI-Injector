@@ -26,14 +26,14 @@ struct recv_shell start_listen(PCSTR port)
     listenSocket = socket(addressInfo->ai_family, addressInfo->ai_socktype, addressInfo->ai_protocol);
     bind(listenSocket, addressInfo->ai_addr, addressInfo->ai_addrlen);
     listen(listenSocket, SOMAXCONN);
-    printf("[*] Listening on TCP port %s", port);
+    printf("[*] Listening on TCP port %s\n", port);
 
     clientSocket = accept(listenSocket, NULL, NULL);
-    printf("[+] Incoming connection...");
+    printf("[+] Incoming connection...\n");
 
     receivedBytes = recv(clientSocket, bufferReceivedBytes, sizeof(bufferReceivedBytes), NULL);
     if (receivedBytes > 0) {
-        printf("[+] Received shellcode bytes %d", receivedBytes);
+        printf("[+] Received shellcode bytes %d\n", receivedBytes);
     }
 
     s.bufferReceivedBytes = bufferReceivedBytes;

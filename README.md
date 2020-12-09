@@ -7,9 +7,9 @@ Inject shellcode from memory to process using Windows NTAPI for bypassing EDRs a
 
 ```shell
 Usage:
-        Injector.exe -u <URL>
-        Injector.exe -p <PID/Process Name> -u <URL>
-        Injector.exe -p <PID/Process Name> -l <LISTEN_PORT>
+        Injector.exe -u <URL> [-k <xor_key>]
+        Injector.exe -p <PID/Process Name> -u <URL> [-k <xor_key>]
+        Injector.exe -p <PID/Process Name> -l <LISTEN_PORT> [-k <xor_key>]
         Injector.exe -h
 Options:
         -h       Show this menu.
